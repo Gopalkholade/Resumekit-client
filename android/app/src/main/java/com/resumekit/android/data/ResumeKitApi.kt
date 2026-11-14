@@ -74,7 +74,7 @@ class ResumeKitApi {
                                 Headers.build {
                                     append(
                                         HttpHeaders.ContentDisposition,
-                                        ContentDisposition.FormData.withParameter("name", "file")
+                                        ContentDisposition("form-data").withParameter("name", "file")
                                             .withParameter("filename", safeFileName).toString(),
                                     )
                                     append(HttpHeaders.ContentType, ContentType.parse("application/pdf").toString())
@@ -94,13 +94,13 @@ class ResumeKitApi {
         username: String,
         token: String?,
     ): List<ProjectItem> =
-        requestJson(baseUrl, apiKey, "/api/v1/ingest/github", HttpMethod.Post) {
+        requestJson<ProjectsResponse>(baseUrl, apiKey, "/api/v1/ingest/github", HttpMethod.Post) {
             contentType(ContentType.Application.Json)
             setBody(GitHubIngestRequest(username, token?.takeIf(String::isNotBlank)))
         }.projects
 
     suspend fun ingestJobDescription(baseUrl: String, apiKey: String, url: String): String =
-        requestJson(baseUrl, apiKey, "/api/v1/ingest/job-description", HttpMethod.Post) {
+        requestJson<JobDescriptionResponse>(baseUrl, apiKey, "/api/v1/ingest/job-description", HttpMethod.Post) {
             contentType(ContentType.Application.Json)
             setBody(JobDescriptionUrlRequest(url))
         }.job_description

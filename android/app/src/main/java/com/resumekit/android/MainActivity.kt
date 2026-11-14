@@ -179,49 +179,49 @@ class MainActivity : ComponentActivity() {
         } catch (error: Exception) {
             viewModel.showError(error.message ?: "Could not share the resume PDF.")
         }
+    }
 
-        private fun readLinkedInPdf(uri: Uri): Pair<String, ByteArray> {
-            val fileName = contentResolver.query(
-                uri,
-                arrayOf(OpenableColumns.DISPLAY_NAME),
-                null,
-                null,
-                null,
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            } ?: "linkedin-profile.pdf"
-            val bytes = contentResolver.openInputStream(uri)?.use { input ->
-                val output = ByteArrayOutputStream()
-                val buffer = ByteArray(16 * 1024)
-                var totalBytes = 0
-                while (totalBytes <= MAX_LINKEDIN_BYTES) {
-                    val count = input.read(
-                        buffer,
-                        0,
-                        minOf(buffer.size, MAX_LINKEDIN_BYTES + 1 - totalBytes),
-                    )
-                    if (count < 0) break
-                    if (count == 0) {
-                        val nextByte = input.read()
-                        if (nextByte < 0) break
-                        output.write(nextByte)
-                        totalBytes++
-                    } else {
-                        output.write(buffer, 0, count)
-                        totalBytes += count
-                    }
+    private fun readLinkedInPdf(uri: Uri): Pair<String, ByteArray> {
+        val fileName = contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        } ?: "linkedin-profile.pdf"
+        val bytes = contentResolver.openInputStream(uri)?.use { input ->
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(16 * 1024)
+            var totalBytes = 0
+            while (totalBytes <= MAX_LINKEDIN_BYTES) {
+                val count = input.read(
+                    buffer,
+                    0,
+                    minOf(buffer.size, MAX_LINKEDIN_BYTES + 1 - totalBytes),
+                )
+                if (count < 0) break
+                if (count == 0) {
+                    val nextByte = input.read()
+                    if (nextByte < 0) break
+                    output.write(nextByte)
+                    totalBytes++
+                } else {
+                    output.write(buffer, 0, count)
+                    totalBytes += count
                 }
-                if (totalBytes > MAX_LINKEDIN_BYTES) {
-                    throw IllegalStateException("LinkedIn PDF exceeds the 15 MiB upload limit.")
-                }
-                output.toByteArray()
-            } ?: throw IllegalStateException("Could not read the selected PDF.")
-            return fileName to bytes
-        }
+            }
+            if (totalBytes > MAX_LINKEDIN_BYTES) {
+                throw IllegalStateException("LinkedIn PDF exceeds the 15 MiB upload limit.")
+            }
+            output.toByteArray()
+        } ?: throw IllegalStateException("Could not read the selected PDF.")
+        return fileName to bytes
+    }
 
-        companion object {
-            private const val MAX_LINKEDIN_BYTES = 15 * 1024 * 1024
-        }
+    companion object {
+        private const val MAX_LINKEDIN_BYTES = 15 * 1024 * 1024
     }
 }
 
@@ -623,8 +623,9 @@ private fun PdfPreview(path: String) {
         onDispose { rendered.pages.forEach(Bitmap::recycle) }
     }
 
+    val renderError = rendered.error
     when {
-        rendered.error != null -> Text(rendered.error, color = MaterialTheme.colorScheme.error)
+        renderError != null -> Text(renderError, color = MaterialTheme.colorScheme.error)
         rendered.pages.isEmpty() -> CircularProgressIndicator()
         else -> LazyColumn(
             modifier = Modifier.fillMaxWidth().height(560.dp),

@@ -285,8 +285,8 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
                     educationReviewPending = imported.education.isNotEmpty(),
                     status = RequestStatus.Ready(
                         if (imported.education.isNotEmpty()) {
-                            "Imported ${imported.work_history.size} work entries and "
-                                + "${imported.education.size} education entries. Review education fields."
+                            "Imported ${imported.work_history.size} work entries and " +
+                                "${imported.education.size} education entries. Review education fields."
                         } else {
                             "Imported ${imported.work_history.size} work entries; no education details were found."
                         },
