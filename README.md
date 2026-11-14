@@ -8,7 +8,7 @@ The Android client uses Kotlin, Jetpack Compose, MVVM/StateFlow, Ktor with the O
 
 To build from a terminal, run `gradle :app:assembleDebug` from the `android` directory. A Gradle wrapper is not included yet.
 
-GitHub Actions builds the debug APK on pushes and pull requests that change files under `android/`. Download `app-debug.apk` from the `resumekit-android-debug-apk` artifact on the workflow run.
+GitHub Actions builds the debug APK on pushes and pull requests that change files under `android/`. Download `app-debug.apk` from the `resumekit-android-debug` artifact on the workflow run.
 
 The workflow supports LinkedIn PDF work-history import with the Storage Access Framework, GitHub project import, job-description URL import or paste, a separate consent step for each Gemini resume match, ATS gap reporting, server-side PDF compilation, native `PdfRenderer` preview, and PDF sharing. Requests allow up to 90 seconds for a sleeping Space to wake.
 
