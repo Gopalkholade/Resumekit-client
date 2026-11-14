@@ -4,22 +4,14 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "clients/android/**"
-      - ".github/workflows/**"
   pull_request:
     branches:
       - main
-    paths:
-      - "clients/android/**"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: clients/android
 
     steps:
       - name: Checkout repository
@@ -50,5 +42,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: resumekit-android-debug
-          path: clients/android/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
