@@ -1,0 +1,11 @@
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
+desktop/*.tsbuildinfo
+.env
+android/.gradle/
+android/local.properties
+android/**/build/
+android/.idea/
+android/*.iml
