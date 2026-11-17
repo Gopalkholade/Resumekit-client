@@ -218,7 +218,8 @@ fn profile_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 fn validate_profile_json(profile_json: &str) -> Result<(), String> {
     let value: serde_json::Value = serde_json::from_str(profile_json)
         .map_err(|error| format!("Profile data is not valid JSON: {error}"))?;
-    if value.get("version").and_then(serde_json::Value::as_u64) != Some(1)
+    let version = value.get("version").and_then(serde_json::Value::as_u64);
+    if !matches!(version, Some(1) | Some(2))
         || !value
             .get("profile")
             .is_some_and(serde_json::Value::is_object)
@@ -401,7 +402,8 @@ mod tests {
     #[test]
     fn profile_envelope_must_be_versioned_object() {
         assert!(validate_profile_json(r#"{"version":1,"profile":{}}"#).is_ok());
-        assert!(validate_profile_json(r#"{"version":2,"profile":{}}"#).is_err());
+        assert!(validate_profile_json(r#"{"version":2,"profile":{}}"#).is_ok());
+        assert!(validate_profile_json(r#"{"version":3,"profile":{}}"#).is_err());
         assert!(validate_profile_json(r#"{"version":1,"profile":[]}"#).is_err());
         assert!(validate_profile_json("invalid").is_err());
     }
