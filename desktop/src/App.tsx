@@ -786,12 +786,12 @@ export default function App() {
                     </button>
                   </div>
                   <label className="field field-wide">
-                    <span>Certifications <small>OPTIONAL · ONE ENTRY PER LINE</small></span>
+                    <span>Certifications <small>OPTIONAL · ONE ENTRY PER LINE (NAME — PROVIDER)</small></span>
                     <textarea
-                      rows={2}
+                      rows={3}
                       value={certifications}
                       onChange={(event) => setCertifications(event.target.value)}
-                      placeholder="Certification name, issuing organization, year"
+                      placeholder="e.g. SQL — HackerRank&#10;Project Management Foundations — LinkedIn Learning&#10;AWS Certified Solutions Architect — Amazon Web Services"
                     />
                   </label>
                   <label className="field field-wide">
