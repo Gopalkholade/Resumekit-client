@@ -6,9 +6,17 @@ This repository contains the user-facing ResumeKit clients. The desktop client i
 
 The Android client uses Kotlin, Jetpack Compose, MVVM/StateFlow, Ktor with the OkHttp engine, and kotlinx.serialization. Open `android` in Android Studio with JDK 17, Gradle 8.13, and Android SDK 36 available, allow Gradle sync to finish, then build or run the `app` configuration. The project requires an HTTPS API base URL and the single-user `RESUMEKIT_API_KEY`; configure these on the **Connect** tab.
 
-To build from a terminal, run `gradle :app:assembleDebug` from the `android` directory. A Gradle wrapper is not included yet.
+### Download Built Android App (APK)
 
-GitHub Actions builds the debug APK on pushes and pull requests that change files under `android/`. Download `app-debug.apk` from the `resumekit-android-debug` artifact on the workflow run.
+Pre-built debug APKs are generated automatically by GitHub Actions CI for every build on `main` and `master`:
+
+* **[Download Latest Android Debug APK](https://github.com/Gopalkholade/Resumekit-client/actions/workflows/android-apk.yml)**  
+  *(Go to the workflow runs link above, click the latest completed run with a green checkmark, scroll down to the **Artifacts** section at the bottom of the summary, and click **`resumekit-android-debug`** to download `app-debug.apk`)*
+* **[GitHub Releases](https://github.com/Gopalkholade/Resumekit-client/releases)** for tagged release packages.
+
+### Building locally
+
+To build from a terminal, run `gradle :app:assembleDebug` from the `android` directory. A Gradle wrapper is not included yet.
 
 The workflow supports LinkedIn PDF work-history import with the Storage Access Framework, GitHub project import, job-description URL import or paste, a separate consent step for each Gemini resume match, ATS gap reporting, server-side PDF compilation, native `PdfRenderer` preview, and PDF sharing. Requests allow up to 90 seconds for a sleeping Space to wake.
 
