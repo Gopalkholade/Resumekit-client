@@ -19,14 +19,6 @@ data class ProjectItem(
 data class TargetedProject(
     val name: String = "",
     val bullets: List<String> = emptyList(),
-    val description: String = "",
-    val repo_url: String? = null,
-    val live_url: String? = null,
-    val primary_language: String? = null,
-    val tags: List<String> = emptyList(),
-    val readme_summary: String? = null,
-    val implicit_skills_found: List<String> = emptyList(),
-    val relevance_score: Double = 0.0,
 )
 
 @Serializable
