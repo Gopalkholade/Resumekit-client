@@ -17,8 +17,16 @@ data class ProjectItem(
 
 @Serializable
 data class TargetedProject(
-    val name: String,
-    val bullets: List<String>,
+    val name: String = "",
+    val bullets: List<String> = emptyList(),
+    val description: String = "",
+    val repo_url: String? = null,
+    val live_url: String? = null,
+    val primary_language: String? = null,
+    val tags: List<String> = emptyList(),
+    val readme_summary: String? = null,
+    val implicit_skills_found: List<String> = emptyList(),
+    val relevance_score: Double = 0.0,
 )
 
 @Serializable
@@ -57,8 +65,8 @@ data class LinkedInProfileImport(
 
 @Serializable
 data class TargetedResume(
-    val header_title: String,
-    val tailored_summary: String,
+    val header_title: String = "",
+    val tailored_summary: String = "",
     val skills_matrix: Map<String, List<String>> = emptyMap(),
     val selected_experience: List<WorkExperience> = emptyList(),
     val selected_projects: List<TargetedProject> = emptyList(),

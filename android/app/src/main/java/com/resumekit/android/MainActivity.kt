@@ -573,6 +573,24 @@ private fun ResumeScreen(
         Text(result.gap_report.missing_critical_gaps.ifEmpty { listOf("No critical gaps reported.") }.joinToString(", "))
         Text(result.targeted_resume.header_title, style = MaterialTheme.typography.titleLarge)
         Text(result.targeted_resume.tailored_summary)
+        if (result.targeted_resume.selected_projects.isNotEmpty()) {
+            Text("Selected projects (${result.targeted_resume.selected_projects.size})", style = MaterialTheme.typography.titleMedium)
+            result.targeted_resume.selected_projects.forEach { project ->
+                Text("• ${project.name}", style = MaterialTheme.typography.titleSmall)
+                project.bullets.forEach { bullet ->
+                    Text("  - $bullet", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        if (result.targeted_resume.selected_experience.isNotEmpty()) {
+            Text("Selected experience (${result.targeted_resume.selected_experience.size})", style = MaterialTheme.typography.titleMedium)
+            result.targeted_resume.selected_experience.forEach { exp ->
+                Text("• ${exp.title} - ${exp.company}", style = MaterialTheme.typography.titleSmall)
+                exp.bullets.forEach { bullet ->
+                    Text("  - $bullet", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
         Button(
             onClick = viewModel::compileResume,
             enabled = !state.busy,
