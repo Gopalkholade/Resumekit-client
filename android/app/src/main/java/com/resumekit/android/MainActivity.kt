@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                             .padding(padding)
                             .padding(horizontal = 16.dp),
                     ) {
-                        StatusMessage(state)
+                        StatusMessage(state, onDismiss = viewModel::dismissStatus)
                         when (state.activeTab) {
                             AppTab.Connection -> ConnectionScreen(state, viewModel)
                             AppTab.Profile -> ProfileScreen(
@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun StatusMessage(state: ResumeKitUiState) {
+private fun StatusMessage(state: ResumeKitUiState, onDismiss: () -> Unit) {
     val message = when (val status = state.status) {
         RequestStatus.Idle -> null
         RequestStatus.WakingServer -> "Waking/checking the ResumeKit Space... This can take up to 90 seconds."
@@ -242,7 +242,16 @@ private fun StatusMessage(state: ResumeKitUiState) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (state.busy) CircularProgressIndicator(modifier = Modifier.height(22.dp))
-            Text(message, color = if (state.status is RequestStatus.Error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = message,
+                color = if (state.status is RequestStatus.Error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            if (!state.busy) {
+                TextButton(onClick = onDismiss) {
+                    Text("Dismiss")
+                }
+            }
         }
     }
 }

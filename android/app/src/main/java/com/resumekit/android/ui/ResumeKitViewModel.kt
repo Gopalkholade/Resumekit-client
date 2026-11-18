@@ -107,16 +107,39 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun selectTab(tab: AppTab) = _state.update { it.copy(activeTab = tab) }
+    fun selectTab(tab: AppTab) = _state.update {
+        it.copy(
+            activeTab = tab,
+            status = if (it.status is RequestStatus.Error) RequestStatus.Idle else it.status,
+        )
+    }
+
+    fun dismissStatus() = _state.update { it.copy(status = RequestStatus.Idle) }
 
     fun updateApiUrl(value: String) = _state.update { it.copy(apiUrl = value, connected = false) }
     fun updateApiKey(value: String) = _state.update { it.copy(apiKey = value, connected = false) }
     fun updateJobDescription(value: String) = _state.update {
-        it.copy(jobDescription = value, consentGiven = false, result = null, pdfPath = null)
+        it.copy(
+            jobDescription = value,
+            consentGiven = false,
+            result = null,
+            pdfPath = null,
+            status = if (it.status is RequestStatus.Error) RequestStatus.Idle else it.status,
+        )
     }
-    fun updateJobUrl(value: String) = _state.update { it.copy(jobUrl = value) }
+    fun updateJobUrl(value: String) = _state.update {
+        it.copy(
+            jobUrl = value,
+            status = if (it.status is RequestStatus.Error) RequestStatus.Idle else it.status,
+        )
+    }
     fun updateGitHubUsername(value: String) = _state.update { it.copy(githubUsername = value) }
-    fun updateConsent(value: Boolean) = _state.update { it.copy(consentGiven = value) }
+    fun updateConsent(value: Boolean) = _state.update {
+        it.copy(
+            consentGiven = value,
+            status = if (it.status is RequestStatus.Error) RequestStatus.Idle else it.status,
+        )
+    }
 
     fun updateName(value: String) = updateProfile { it.copy(full_name = value) }
     fun updateSummary(value: String) = updateProfile { it.copy(professional_summary = value) }
@@ -353,7 +376,7 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
             _state.update { it.copy(status = RequestStatus.Error("Paste or import the job description first.")) }
             return
         }
-        _state.update { it.copy(consentGiven = false, result = null, pdfPath = null) }
+        _state.update { it.copy(result = null, pdfPath = null) }
         launchRequest(RequestStatus.WakingServer) {
             requireCredentials(snapshot.apiUrl, snapshot.apiKey)
             api.checkHealth(snapshot.apiUrl)
