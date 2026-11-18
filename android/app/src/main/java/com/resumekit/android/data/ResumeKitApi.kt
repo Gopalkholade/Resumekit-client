@@ -31,6 +31,7 @@ class ResumeKitApi {
     private val json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
+        encodeDefaults = true
     }
 
     private val client = HttpClient(OkHttp) {
@@ -169,11 +170,26 @@ class ResumeKitApi {
         if (response.status.value in 200..299) return
         val body = response.bodyAsText()
         val detail = runCatching {
-            json.parseToJsonElement(body)
-                .let { it as? kotlinx.serialization.json.JsonObject }
-                ?.get("detail")
-                ?.toString()
-                ?.trim('"')
+            val element = json.parseToJsonElement(body)
+            if (element is kotlinx.serialization.json.JsonObject) {
+                val detailElement = element["detail"]
+                when (detailElement) {
+                    is kotlinx.serialization.json.JsonPrimitive -> detailElement.content
+                    is kotlinx.serialization.json.JsonArray -> {
+                        detailElement.mapNotNull { err ->
+                            (err as? kotlinx.serialization.json.JsonObject)?.let { obj ->
+                                val loc = (obj["loc"] as? kotlinx.serialization.json.JsonArray)
+                                    ?.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }
+                                    ?.filter { it != "body" }
+                                    ?.joinToString(" -> ")
+                                val msg = (obj["msg"] as? kotlinx.serialization.json.JsonPrimitive)?.content
+                                if (loc.isNullOrBlank()) msg else "$loc: $msg"
+                            }
+                        }.joinToString("; ")
+                    }
+                    else -> detailElement?.toString()?.trim('"')
+                }
+            } else null
         }.getOrNull()
         throw IllegalStateException(detail?.takeIf(String::isNotBlank) ?: "Request failed (HTTP ${response.status.value}).")
     }

@@ -73,7 +73,10 @@ data class ResumeKitUiState(
 class ResumeKitViewModel(application: Application) : AndroidViewModel(application) {
     private val secureStore = SecureStore(application)
     private val api = ResumeKitApi()
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
     private val _state = MutableStateFlow(ResumeKitUiState())
     val state: StateFlow<ResumeKitUiState> = _state.asStateFlow()
 
@@ -405,9 +408,13 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
                 block()
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
+                val isConnectionFailure = error is io.ktor.client.plugins.HttpRequestTimeoutException ||
+                    error is java.net.ConnectException ||
+                    error is java.net.UnknownHostException ||
+                    (initialStatus == RequestStatus.WakingServer && error.message?.contains("not respond") == true)
                 _state.update {
                     it.copy(
-                        connected = if (initialStatus == RequestStatus.WakingServer) false else it.connected,
+                        connected = if (isConnectionFailure) false else it.connected,
                         status = RequestStatus.Error(error.message ?: "The request failed."),
                     )
                 }
