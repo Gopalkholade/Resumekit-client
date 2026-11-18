@@ -455,7 +455,9 @@ private fun ProfileScreen(
         OutlinedTextField(
             value = state.certificationsText,
             onValueChange = viewModel::updateCertifications,
-            label = { Text("Certifications (comma separated)") },
+            label = { Text("Certifications (format: Certificate — Provider)") },
+            placeholder = { Text("e.g. SQL (Basic) — HackerRank, AWS Cloud Practitioner — AWS") },
+            supportingText = { Text("Format as 'Certification — Provider'. ResumeKit auto-infers recognized issuers on import.") },
             minLines = 2,
             modifier = Modifier.fillMaxWidth(),
         )
