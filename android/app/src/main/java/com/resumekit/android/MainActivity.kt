@@ -9,7 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,13 +18,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -138,6 +138,7 @@ class MainActivity : ComponentActivity() {
                                 state = state,
                                 viewModel = viewModel,
                                 onShare = { path -> sharePdf(path) },
+                                onOpen = { path -> openPdf(path) },
                             )
                         }
                     }
@@ -162,6 +163,22 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    private fun openPdf(path: String) {
+        try {
+            val file = File(path)
+            if (!file.isFile) throw IllegalStateException("The generated PDF is no longer available. Generate it again.")
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(Intent.createChooser(intent, "Open resume PDF"))
+        } catch (error: Exception) {
+            viewModel.showError(error.message ?: "Could not open the resume PDF.")
         }
     }
 
@@ -565,6 +582,7 @@ private fun ResumeScreen(
     state: ResumeKitUiState,
     viewModel: ResumeKitViewModel,
     onShare: (String) -> Unit,
+    onOpen: (String) -> Unit,
 ) {
     val result = state.result
     Column(
@@ -610,8 +628,22 @@ private fun ResumeScreen(
             Text("Compile PDF")
         }
         state.pdfPath?.let { path ->
-            OutlinedButton(onClick = { onShare(path) }, modifier = Modifier.fillMaxWidth()) {
-                Text("Share PDF")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Button(
+                    onClick = { onOpen(path) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Open PDF")
+                }
+                OutlinedButton(
+                    onClick = { onShare(path) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Share PDF")
+                }
             }
             Text("PDF preview", style = MaterialTheme.typography.titleMedium)
             PdfPreview(path)
@@ -633,7 +665,7 @@ private fun PdfPreview(path: String) {
                         val pages = ArrayList<Bitmap>(renderer.pageCount)
                         for (index in 0 until renderer.pageCount) {
                             renderer.openPage(index).use { page ->
-                                val width = 1000
+                                val width = 720
                                 val height = (page.height.toFloat() / page.width * width).toInt().coerceAtLeast(1)
                                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
@@ -643,35 +675,52 @@ private fun PdfPreview(path: String) {
                         PdfPagesState(pages = pages)
                     }
                 }
-            } catch (error: Exception) {
-                PdfPagesState(error = error.message ?: "Could not render the PDF preview.")
+            } catch (error: Throwable) {
+                PdfPagesState(error = "Preview rendering unavailable (${error.localizedMessage ?: "renderer error"}). Use 'Open PDF' or 'Share PDF' above.")
             }
         }
-    }
-    DisposableEffect(rendered.pages) {
-        onDispose { rendered.pages.forEach(Bitmap::recycle) }
     }
 
     val renderError = rendered.error
     when {
-        renderError != null -> Text(renderError, color = MaterialTheme.colorScheme.error)
+        renderError != null -> {
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Text(
+                    text = renderError,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp),
+                )
+            }
+        }
         rendered.pages.isEmpty() -> CircularProgressIndicator()
-        else -> LazyColumn(
-            modifier = Modifier.fillMaxWidth().height(560.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            itemsIndexed(rendered.pages) { index, bitmap ->
-                Column {
-                    Text("Page ${index + 1}")
-                    Canvas(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(bitmap.width.toFloat() / bitmap.height),
+        else -> {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                rendered.pages.forEachIndexed { index, bitmap ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     ) {
-                        drawImage(
-                            bitmap.asImageBitmap(),
-                            dstSize = IntSize(size.width.toInt(), size.height.toInt()),
-                        )
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                "Page ${index + 1}",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(bottom = 4.dp),
+                            )
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Resume Page ${index + 1}",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(bitmap.width.toFloat() / bitmap.height),
+                                contentScale = ContentScale.Fit,
+                            )
+                        }
                     }
                 }
             }
