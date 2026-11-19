@@ -3,6 +3,8 @@ import {
   BriefcaseBusiness,
   Check,
   CircleHelp,
+  CloudDownload,
+  CloudUpload,
   Compass,
   FileText,
   Github,
@@ -24,6 +26,7 @@ import {
   compileResumePDF,
   configureApiSettings,
   deleteSavedProfile,
+  fetchRemoteProfile,
   ingestGitHub,
   ingestJobDescriptionUrl,
   ingestLinkedIn,
@@ -31,6 +34,7 @@ import {
   loadSavedProfile,
   saveApiSettings,
   saveProfile,
+  syncRemoteProfile,
 } from "./api";
 import FileDrop from "./components/FileDrop";
 import GapReportView from "./components/GapReportView";
@@ -45,7 +49,7 @@ import type {
 } from "./types";
 
 type APIState = "checking" | "online" | "offline";
-type BusyAction = "linkedin" | "github" | "job-url" | "audit" | "pdf" | null;
+type BusyAction = "linkedin" | "github" | "job-url" | "audit" | "pdf" | "profile-sync" | null;
 type ProfileSaveState = "loading" | "empty" | "saving" | "saved" | "error";
 
 function emptyProfile(): SavedProfile {
@@ -499,6 +503,17 @@ export default function App() {
       } catch (err) {
         setProfileStorageError(messageFrom(err));
       }
+
+      // Sync to cloud so Android app receives it immediately
+      const currentSkillsMap = masterCV.skills_inventory;
+      const allMerged = [...(currentSkillsMap["Skills"] || []), trimmed];
+      void syncRemoteProfile({
+        ...masterCV,
+        skills_inventory: {
+          ...currentSkillsMap,
+          Skills: Array.from(new Set(allMerged)),
+        },
+      }).catch(() => {});
     }
 
     if (result) {
@@ -512,6 +527,72 @@ export default function App() {
           matched_skills: [...result.gap_report.matched_skills, trimmed],
         },
       });
+    }
+  }
+
+  async function handlePullRemoteProfile() {
+    setBusy("profile-sync");
+    setError("");
+    try {
+      const remote = await fetchRemoteProfile();
+      if (!remote || !remote.full_name) {
+        setError("No remote profile found in your Space yet. You can push your current profile.");
+        return;
+      }
+      setFullName(remote.full_name);
+      if (remote.contact) {
+        if (remote.contact.email) setEmail(remote.contact.email);
+        const { email: _, ...rest } = remote.contact;
+        setProfileContact(rest);
+      }
+      if (remote.professional_summary) setSummary(remote.professional_summary);
+      const remoteSkills = mergeSkills(...Object.values(remote.skills_inventory ?? {}));
+      if (remoteSkills.length) setSkills(remoteSkills.join(", "));
+      if (remote.work_history?.length) setWorkHistory(remote.work_history);
+      if (remote.all_projects?.length) setProjects(remote.all_projects);
+      if (remote.education?.length) {
+        setEducation(
+          remote.education.map((e) => ({
+            degree: e.degree || "",
+            university: e.university || "",
+            field_of_study: e.field_of_study || "",
+            start_date: e.start_date || "",
+            end_date: e.end_date || "",
+          })),
+        );
+      }
+      if (remote.certifications?.length) {
+        setCertifications(remote.certifications.map((c) => String(c)).join("\n"));
+      }
+      saveProfile({
+        full_name: remote.full_name,
+        email: remote.contact?.email || "",
+        professional_summary: remote.professional_summary || "",
+        skills: remoteSkills.join(", "),
+        contact: remote.contact || {},
+        education: remote.education || [],
+        certifications: (remote.certifications || []).map((c) => String(c)).join("\n"),
+        work_history: remote.work_history || [],
+        all_projects: remote.all_projects || [],
+      });
+      setProfileSaveState("saved");
+    } catch (caught) {
+      setError(messageFrom(caught));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handlePushRemoteProfile() {
+    setBusy("profile-sync");
+    setError("");
+    try {
+      await syncRemoteProfile(masterCV);
+      setProfileSaveState("saved");
+    } catch (caught) {
+      setError(messageFrom(caught));
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -664,6 +745,26 @@ export default function App() {
                       {profileSaveState === "saved" && "Safely saved on this device"}
                       {profileSaveState === "error" && "Vault unavailable"}
                     </span>
+                    <button
+                      className="button button-outline button-small"
+                      type="button"
+                      title="Push your profile to your Space so Android and other devices stay in sync"
+                      disabled={busy === "profile-sync"}
+                      onClick={() => void handlePushRemoteProfile()}
+                    >
+                      <CloudUpload size={13} />
+                      Sync to cloud
+                    </button>
+                    <button
+                      className="button button-outline button-small"
+                      type="button"
+                      title="Pull latest profile from your Space (e.g. updated from Android or another browser)"
+                      disabled={busy === "profile-sync"}
+                      onClick={() => void handlePullRemoteProfile()}
+                    >
+                      <CloudDownload size={13} />
+                      Pull from cloud
+                    </button>
                     {(profileSaveState === "saved" || profileSaveState === "error") && (
                       <button
                         className="button button-danger button-small"

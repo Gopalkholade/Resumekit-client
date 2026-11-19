@@ -263,8 +263,57 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             try {
                 secureStore.write(PROFILE_KEY, json.encodeToString(updatedProfile))
+                val baseUrl = _state.value.apiUrl.trim()
+                val apiKey = _state.value.apiKey.trim()
+                if (baseUrl.isNotBlank() && apiKey.isNotBlank()) {
+                    api.syncRemoteProfile(baseUrl, apiKey, updatedProfile)
+                }
             } catch (error: Exception) {
                 if (error is CancellationException) throw error
+            }
+        }
+    }
+
+    fun syncProfileFromCloud() {
+        val snapshot = _state.value
+        launchRequest(RequestStatus.Working("Syncing profile from cloud...")) {
+            requireCredentials(snapshot.apiUrl, snapshot.apiKey)
+            val remote = api.fetchRemoteProfile(snapshot.apiUrl, snapshot.apiKey)
+            if (remote == null || remote.full_name.isBlank()) {
+                _state.update {
+                    it.copy(
+                        status = RequestStatus.Error("No profile found in your Space yet. You can push your current profile."),
+                    )
+                }
+                return@launchRequest
+            }
+            val skillsText = remote.skills_inventory.values.flatten().distinct().joinToString(", ")
+            val certsText = remote.certifications.joinToString(", ")
+            _state.update {
+                it.copy(
+                    profile = remote,
+                    skillsText = skillsText,
+                    certificationsText = certsText,
+                    status = RequestStatus.Ready("Synced profile from cloud (${remote.full_name})."),
+                )
+            }
+            try {
+                secureStore.write(PROFILE_KEY, json.encodeToString(remote))
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+            }
+        }
+    }
+
+    fun pushProfileToCloud() {
+        val snapshot = _state.value
+        launchRequest(RequestStatus.Working("Saving profile to cloud...")) {
+            requireCredentials(snapshot.apiUrl, snapshot.apiKey)
+            api.syncRemoteProfile(snapshot.apiUrl, snapshot.apiKey, snapshot.profile)
+            _state.update {
+                it.copy(
+                    status = RequestStatus.Ready("Profile backed up to cloud."),
+                )
             }
         }
     }
@@ -320,13 +369,34 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
                 throw IllegalStateException("The Space is reachable, but its GEMINI_API_KEY secret is not configured.")
             }
             _state.update { it.copy(consentGiven = false) }
+            val currentProfile = _state.value.profile
+            var welcomeMessage = "Connected. The Space and Gemini are ready."
+            var loadedProfile: MasterCV? = null
+            if (currentProfile.full_name.isBlank() && currentProfile.skills_inventory.isEmpty()) {
+                val remote = runCatching {
+                    api.fetchRemoteProfile(snapshot.apiUrl.trim().trimEnd('/'), snapshot.apiKey)
+                }.getOrNull()
+                if (remote != null && remote.full_name.isNotBlank()) {
+                    loadedProfile = remote
+                    welcomeMessage = "Connected! Profile synced from cloud (${remote.full_name})."
+                }
+            }
+
             _state.update {
                 it.copy(
                     connected = true,
                     geminiConfigured = remoteStatus.gemini_configured,
                     apiUrl = snapshot.apiUrl.trim().trimEnd('/'),
-                    status = RequestStatus.Ready("Connected. The Space and Gemini are ready."),
+                    profile = loadedProfile ?: it.profile,
+                    skillsText = loadedProfile?.skills_inventory?.values?.flatten()?.distinct()?.joinToString(", ") ?: it.skillsText,
+                    certificationsText = loadedProfile?.certifications?.joinToString(", ") ?: it.certificationsText,
+                    status = RequestStatus.Ready(welcomeMessage),
                 )
+            }
+            if (loadedProfile != null) {
+                runCatching {
+                    secureStore.write(PROFILE_KEY, json.encodeToString(loadedProfile))
+                }
             }
         }
     }

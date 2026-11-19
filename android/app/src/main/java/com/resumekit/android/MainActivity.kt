@@ -328,6 +328,34 @@ private fun ProfileScreen(
     ) {
         Text("Master profile", style = MaterialTheme.typography.headlineSmall)
         Text("Your profile is encrypted on this device. Imported details stay here until you explicitly consent to a match.")
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Cloud sync", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Keep your skills, experience, and profile synchronized with Desktop via your private Space.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = viewModel::syncProfileFromCloud,
+                        enabled = !state.busy && state.connected,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Pull from cloud")
+                    }
+                    OutlinedButton(
+                        onClick = viewModel::pushProfileToCloud,
+                        enabled = !state.busy && state.connected,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Push to cloud")
+                    }
+                }
+            }
+        }
         OutlinedTextField(
             value = state.profile.full_name,
             onValueChange = viewModel::updateName,

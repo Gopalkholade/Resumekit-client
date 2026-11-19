@@ -91,6 +91,9 @@ data class ProjectsResponse(val projects: List<ProjectItem>)
 data class JobDescriptionResponse(val job_description: String)
 
 @Serializable
+data class ProfileResponse(val profile: MasterCV? = null)
+
+@Serializable
 data class ApiStatusResponse(val status: String, val gemini_configured: Boolean)
 
 @Serializable

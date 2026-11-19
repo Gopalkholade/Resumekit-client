@@ -117,6 +117,28 @@ class ResumeKitApi {
             setBody(AuditRequest(masterCV, jobDescription, allow_external_processing = true))
         }
 
+    suspend fun fetchRemoteProfile(
+        baseUrl: String,
+        apiKey: String,
+    ): MasterCV? =
+        requestJson<ProfileResponse>(baseUrl, apiKey, "/api/v1/profile", HttpMethod.Get).profile
+
+    suspend fun syncRemoteProfile(
+        baseUrl: String,
+        apiKey: String,
+        profile: MasterCV,
+    ) {
+        withTimeoutMessage {
+            val response = client.request(baseUrl.trimEnd('/') + "/api/v1/profile") {
+                this.method = HttpMethod.Put
+                header(API_KEY_HEADER, apiKey)
+                contentType(ContentType.Application.Json)
+                setBody(profile)
+            }
+            requireSuccess(response)
+        }
+    }
+
     suspend fun compileResume(
         baseUrl: String,
         apiKey: String,

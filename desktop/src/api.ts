@@ -187,6 +187,19 @@ export async function auditResume(
   });
 }
 
+export async function fetchRemoteProfile(): Promise<MasterCV | null> {
+  const data = await request<{ profile: MasterCV | null }>("/api/v1/profile");
+  return data.profile ?? null;
+}
+
+export async function syncRemoteProfile(profile: MasterCV): Promise<void> {
+  await request<{ status: string }>("/api/v1/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+}
+
 export async function compileResumePDF(
   document: AuditResult["targeted_resume"],
 ): Promise<Blob> {
