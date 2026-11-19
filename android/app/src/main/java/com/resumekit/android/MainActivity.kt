@@ -12,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -599,7 +600,30 @@ private fun ResumeScreen(
         Text("Skills identified from project evidence", style = MaterialTheme.typography.titleMedium)
         Text(result.gap_report.implicit_skills_from_readme.ifEmpty { listOf("None reported.") }.joinToString(", "))
         Text("Critical gaps", style = MaterialTheme.typography.titleMedium)
-        Text(result.gap_report.missing_critical_gaps.ifEmpty { listOf("No critical gaps reported.") }.joinToString(", "))
+        if (result.gap_report.missing_critical_gaps.isEmpty()) {
+            Text("No critical gaps reported. Great match!")
+        } else {
+            Text(
+                "If you possess any of these skills, tap '+ Add' to save it permanently to your skills database:",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            result.gap_report.missing_critical_gaps.forEach { gap ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("• $gap", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(
+                        onClick = { viewModel.addSkillFromGap(gap) },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    ) {
+                        Text("+ Add to my skills", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        }
         Text(result.targeted_resume.header_title, style = MaterialTheme.typography.titleLarge)
         Text(result.targeted_resume.tailored_summary)
         if (result.targeted_resume.selected_projects.isNotEmpty()) {

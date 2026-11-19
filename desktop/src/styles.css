@@ -197,6 +197,9 @@ h1 span { color: var(--purple); }
 .chip-green { color: #308566; background: #eff9f4; }
 .chip-blue { color: #5478ae; background: #f0f5ff; }
 .chip-amber { color: #a87a3d; background: #fff8eb; }
+.chip-actionable { display: inline-flex; align-items: center; gap: 6px; }
+.chip-action-btn { display: inline-flex; align-items: center; gap: 3px; background: #faeac7; border: 1px solid #ebd094; color: #7f520f; border-radius: 4px; padding: 2px 6px; font-size: 8px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s, transform 0.1s; }
+.chip-action-btn:hover { background: #f5dcab; color: #5e3b07; transform: translateY(-0.5px); }
 .empty-note { margin: 0; color: #aaa4a0; font-size: 9px; line-height: 1.5; }
 .tailored-card { padding: 15px 17px; border: 1px solid #e9e4fb; border-radius: 10px; background: linear-gradient(120deg, #fbfaff, #fff); }
 .tailored-card-heading { display: flex; align-items: center; gap: 7px; color: #6853cf; font-size: 10px; }

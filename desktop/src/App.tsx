@@ -477,6 +477,44 @@ export default function App() {
     }
   }
 
+  function handleAddSkillFromGap(skillToAdd: string) {
+    const trimmed = skillToAdd.trim();
+    if (!trimmed) return;
+
+    const currentList = skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (!currentList.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+      const updatedList = [...currentList, trimmed];
+      const updatedSkillsStr = updatedList.join(", ");
+      setSkills(updatedSkillsStr);
+      try {
+        saveProfile({
+          ...savedProfile,
+          skills: updatedSkillsStr,
+        });
+        setProfileSaveState("saved");
+      } catch (err) {
+        setProfileStorageError(messageFrom(err));
+      }
+    }
+
+    if (result) {
+      setResult({
+        ...result,
+        gap_report: {
+          ...result.gap_report,
+          missing_critical_gaps: result.gap_report.missing_critical_gaps.filter(
+            (s) => s.toLowerCase() !== trimmed.toLowerCase(),
+          ),
+          matched_skills: [...result.gap_report.matched_skills, trimmed],
+        },
+      });
+    }
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -986,7 +1024,7 @@ export default function App() {
                   {busy === "pdf" ? "Creating PDF…" : "Generate PDF"}
                 </button>
               </div>
-              <GapReportView report={result.gap_report} />
+              <GapReportView report={result.gap_report} onAddSkill={handleAddSkillFromGap} />
               <div className="tailored-card">
                 <div className="tailored-card-heading"><WandSparkles size={17} /><strong>Gemini-tailored summary · review for accuracy</strong></div>
                 <p>{result.targeted_resume.tailored_summary}</p>

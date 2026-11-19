@@ -1,10 +1,11 @@
-import { Check, CircleAlert, Sparkles } from "lucide-react";
+import { Check, CircleAlert, Plus, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { GapReport } from "../types";
 
 interface GapReportViewProps {
   report: GapReport;
+  onAddSkill?: (skill: string) => void;
 }
 
 function SkillList({
@@ -13,12 +14,14 @@ function SkillList({
   tone,
   icon,
   empty,
+  onAddSkill,
 }: {
   title: string;
   values: string[];
   tone: "green" | "amber" | "blue";
   icon: ReactNode;
   empty: string;
+  onAddSkill?: (skill: string) => void;
 }) {
   return (
     <section className="skill-result">
@@ -32,8 +35,19 @@ function SkillList({
       {values.length ? (
         <div className="chip-list">
           {values.map((skill) => (
-            <span className={`chip chip-${tone}`} key={skill}>
-              {skill}
+            <span className={`chip chip-${tone} ${onAddSkill ? "chip-actionable" : ""}`} key={skill}>
+              <span>{skill}</span>
+              {onAddSkill && (
+                <button
+                  type="button"
+                  className="chip-action-btn"
+                  title={`I have this skill — save "${skill}" permanently to my skills`}
+                  onClick={() => onAddSkill(skill)}
+                >
+                  <Plus size={11} />
+                  <span>Add to skills</span>
+                </button>
+              )}
             </span>
           ))}
         </div>
@@ -44,7 +58,7 @@ function SkillList({
   );
 }
 
-export default function GapReportView({ report }: GapReportViewProps) {
+export default function GapReportView({ report, onAddSkill }: GapReportViewProps) {
   return (
     <div className="gap-report">
       <SkillList
@@ -67,6 +81,7 @@ export default function GapReportView({ report }: GapReportViewProps) {
         tone="amber"
         icon={<CircleAlert size={16} />}
         empty="Great — no listed skills are missing from your evidence."
+        onAddSkill={onAddSkill}
       />
     </div>
   );

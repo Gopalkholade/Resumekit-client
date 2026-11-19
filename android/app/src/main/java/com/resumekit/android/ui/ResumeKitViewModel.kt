@@ -222,6 +222,53 @@ class ResumeKitViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun addSkillFromGap(skill: String) {
+        val trimmed = skill.trim()
+        if (trimmed.isBlank()) return
+
+        val currentProfile = _state.value.profile
+        val existingSkills = currentProfile.skills_inventory.values.flatten().toMutableList()
+        if (!existingSkills.any { it.equals(trimmed, ignoreCase = true) }) {
+            existingSkills.add(trimmed)
+        }
+
+        val updatedSkillsInventory = currentProfile.skills_inventory.toMutableMap().apply {
+            put("Skills", existingSkills.distinct())
+        }
+        val updatedProfile = currentProfile.copy(skills_inventory = updatedSkillsInventory)
+
+        val currentResult = _state.value.result
+        val updatedResult = currentResult?.let { res ->
+            val updatedGaps = res.gap_report.missing_critical_gaps.filterNot {
+                it.equals(trimmed, ignoreCase = true)
+            }
+            val updatedMatched = (res.gap_report.matched_skills + trimmed).distinct()
+            res.copy(
+                gap_report = res.gap_report.copy(
+                    missing_critical_gaps = updatedGaps,
+                    matched_skills = updatedMatched,
+                )
+            )
+        }
+
+        _state.update {
+            it.copy(
+                profile = updatedProfile,
+                skillsText = existingSkills.distinct().joinToString(", "),
+                result = updatedResult,
+                status = RequestStatus.Ready("Added '$trimmed' to your permanent skills database."),
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                secureStore.write(PROFILE_KEY, json.encodeToString(updatedProfile))
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+            }
+        }
+    }
+
     private fun updateProfile(transform: (MasterCV) -> MasterCV) {
         _state.update {
             it.copy(
